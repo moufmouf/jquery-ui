@@ -185,16 +185,14 @@ grunt.registerTask( "generate_themes", function() {
 		throw new Error( "You need to manually install download.jqueryui.com for this task to work" );
 	}
 
-	// copy release files into download builder to avoid cloning again
-	grunt.file.expandFiles( distFolder + "/**" ).forEach(function( file ) {
-		grunt.file.copy( file, "node_modules/download.jqueryui.com/release/" + file.replace(/^dist\/jquery-ui-/, "") );
+	download = require( "download.jqueryui.com" )({
+		config: {
+			"jqueryUi": {
+				"stable": { "path": __dirname + "/../../" }
+			},
+			"jquery": "skip"
+		}
 	});
-	// make it look for the right version
-	configContent = grunt.file.readJSON( configFile );
-	configContent.jqueryUi.stable.version = grunt.config( "pkg.version" );
-	grunt.file.write( configFile, JSON.stringify( configContent, null, "\t" ) + "\n" );
-
-	download = new ( require( "download.jqueryui.com" ) )();
 
 	files = grunt.file.expandFiles( distFolder + "/themes/base/**/*" );
 	files.forEach(function( fileName ) {
@@ -202,7 +200,7 @@ grunt.registerTask( "generate_themes", function() {
 	});
 
 	done = this.async();
-	grunt.utils.async.forEach( download.themeroller.gallery(), function( theme, done ) {
+	grunt.utils.async.forEach( download.themegallery(), function( theme, done ) {
 		var folderName = theme.folderName(),
 			concatTarget = "css-" + folderName,
 			cssContent = theme.css(),
@@ -221,7 +219,7 @@ grunt.registerTask( "generate_themes", function() {
 		};
 		grunt.task.run( "concat:" + concatTarget );
 
-		theme.fetchImages(function( err, files ) {
+		theme.generateImages(function( err, files ) {
 			if ( err ) {
 				done( err );
 				return;
